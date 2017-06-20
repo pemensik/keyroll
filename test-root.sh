@@ -17,6 +17,7 @@ dig_simple()
 mkdir "test-$DATE"
 cd "test-$DATE"
 
+echo $DATE
 dig_simple root.current.dnskey @$ROOTNS +multiline -t DNSKEY .
 dig_simple root.soa SOA .
 dig_simple root.dnskey +multiline -t DNSKEY .
