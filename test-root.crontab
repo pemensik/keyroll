@@ -1,2 +1,2 @@
 # start testdns 
-*/10 * * * * service named status >/dev/null && cd $HOME/keyroll && ./test-dns.sh >> test-summary.txt
+*/10 * * * * /sbin/service named status >/dev/null && cd $HOME/keyroll && ./test-dns.sh >> test-summary.txt
