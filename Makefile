@@ -21,6 +21,9 @@ NAMED_RPM_KEYS=  /etc/named.root.key
 UNBOUND_RPM_ZONE=/etc/unbound/$(ROOT_ZONE)
 UNBOUND_RPM_KEYS=/var/lib/unbound/root.key
 UNBOUND_RPM_CONF=/etc/unbound/conf.d/unbound-rh.conf
+UNBOUND_CONTEXT=system_u:object_r:named_cache_t
+UNBOUND_UNIT=keyroll-systems-root.service
+UNBOUND_RPM_UNIT=/etc/systemd/system/unbound.service.d/$(UNBOUND_UNIT)
 
 all:
 
@@ -79,7 +82,7 @@ clean-named:
 
 install-unbound-conf: $(UNBOUND_DEST)/$(ROOT_ZONE) $(UNBOUND_DEST)/$(ROOT_KEY)
 
-install-unbound-rpm: $(UNBOUND_RPM_ZONE) $(UNBOUND_RPM_KEYS)$(BAK_SUFFIX) $(UNBOUND_RPM_CONF)
+install-unbound-rpm: $(UNBOUND_RPM_ZONE) $(UNBOUND_RPM_KEYS)$(BAK_SUFFIX) $(UNBOUND_RPM_CONF) $(UNBOUND_RPM_UNIT)
 
 uninstall-unbound-rpm: $(UNBOUND_RPM_ZONE) $(UNBOUND_RPM_KEYS)$(BAK_SUFFIX) $(UNBOUND_RPM_CONF)
 	$(SUDO) mv $(UNBOUND_RPM_KEYS)$(BAK_SUFFIX) $(UNBOUND_RPM_KEYS)
@@ -89,11 +92,17 @@ $(UNBOUND_RPM_CONF): $(UNBOUND_CONF)
 	$(SUDO) install -m 644 $(UNBOUND_CONF) $(UNBOUND_RPM_CONF)
 
 $(UNBOUND_RPM_ZONE): $(ROOT_ZONE)
-	$(SUDO) install -m 644 $(ROOT_ZONE) $(UNOBUND_RPM_ZONE)
+	$(SUDO) install -m 644 $(ROOT_ZONE) $(UNBOUND_RPM_ZONE)
 
-$(UNBOUND_RPM_KEYS)$(BAK_SUFFIX): $(ROOT_KEY)
+$(UNBOUND_RPM_KEYS)$(BAK_SUFFIX):
 	$(SUDO) mv $(UNBOUND_RPM_KEYS) $(UNBOUND_RPM_KEYS)$(BAK_SUFFIX)
-	$(SUDO) install -o unbound -g unbound -m 644 -Z system_u:object_r:named_cache_t $(ROOT_KEY) $(UNBOUND_RPM_KEYS)
+
+$(UNBOUND_RPM_KEYS): $(ROOT_KEY) $(UNBOUND_RPM_KEYS)$(BAK_SUFFIX)
+	$(SUDO) install -o unbound -g unbound -m 644 -T $(ROOT_KEY) $(UNBOUND_RPM_KEYS)
+	$(SUDO) restorecon $(UNBOUND_RPM_KEYS)
+
+$(UNBOUND_RPM_UNIT): $(UNBOUND_UNIT)
+	$(SUDO) install -m 644 -T $(UNBOUND_UNIT) $(UNBOUND_RPM_UNIT)
 
 $(UNBOUND_DEST)/$(ROOT_ZONE): $(ROOT_ZONE)	
 	install -d $(UNBOUND_DEST)
